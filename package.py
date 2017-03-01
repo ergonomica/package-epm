@@ -21,3 +21,6 @@ def package(env, args, kwargs):
                 wget.download("https://raw.githubusercontent.com/ergonomica/package-%s/master/%s.py" % (package, package))
             except Exception:
                 raise Exception("[ergo: DownloadError]: Error downloading package `%s`." % package)
+
+verbs = {"package":package,
+        }
