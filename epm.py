@@ -1,5 +1,5 @@
 """
-[package.py]
+[epm.py]
 
 The Ergonomica package manager.
 """
@@ -12,7 +12,7 @@ try:
 except ImportError:
     raise Exception("[ergo: PackageError]: Please pip install `wget` to use package `package`.")
 
-def package(env, args, kwargs):
+def epm(env, args, kwargs):
     if len(args) < 2:
         raise Exception("[ergo: ArgumentError]: Not enough arguments passed to `package` command.")
     if args[0] == "install":
@@ -26,5 +26,5 @@ def package(env, args, kwargs):
         for package in args[1:]:
             shutil.rmtree(os.expanduser("~/.ergo/packages/%s" % package))
             
-verbs = {"package":package,
+verbs = {"epm":epm,
         }
