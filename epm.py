@@ -14,6 +14,8 @@ except ImportError:
 
 def epm(env, args, kwargs):
     if len(args) < 2:
+        if args == ["list"]:
+            return list(set([x.split(".")[0] for x in os.listdir(os.path.expanduser("~/.ergo/packages"))]))
         raise Exception("[ergo: ArgumentError]: Not enough arguments passed to `package` command.")
     if args[0] == "install":
         for package in args[1:]:
@@ -24,7 +26,7 @@ def epm(env, args, kwargs):
                 raise Exception("[ergo: DownloadError]: Error downloading package `%s`." % package)
     elif args[0] == "uninstall":
         for package in args[1:]:
-            shutil.rmtree(os.expanduser("~/.ergo/packages/%s" % package))
-            
+            shutil.rmtree(os.path.expanduser("~/.ergo/packages/%s" % package))
+
 verbs = {"epm":epm,
         }
