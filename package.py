@@ -5,6 +5,7 @@ The Ergonomica package manager.
 """
 
 import os
+import shutil
 
 try:
     import wget
@@ -21,6 +22,9 @@ def package(env, args, kwargs):
                 wget.download("https://raw.githubusercontent.com/ergonomica/package-%s/master/%s.py" % (package, package))
             except Exception:
                 raise Exception("[ergo: DownloadError]: Error downloading package `%s`." % package)
-
+    elif args[0] == "uninstall":
+        for package in args[1:]:
+            shutil.rmtree(os.expanduser("~/.ergo/packages/%s" % package))
+            
 verbs = {"package":package,
         }
