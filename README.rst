@@ -31,3 +31,5 @@ To list all installed packages, run
 .. code::
 
    epm list
+
+Note that this lists all packages in :code:`~/.ergo/packages`; not just those installed through epm.
