@@ -24,7 +24,7 @@ To remove this package, simply run
 
 .. code::
 
-   epm remove package
+    epm remove package
 
 To list all installed packages, run
 
@@ -33,3 +33,8 @@ To list all installed packages, run
    epm list
 
 Note that this lists all packages in :code:`~/.ergo/packages`; not just those installed through epm.
+
+Security
+--------
+
+All packages are installed in :code:`~/.ergo/packages` (not any /usr directory). Additionally, all packages must be approved by the Ergonomica github organization.
