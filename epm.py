@@ -12,6 +12,62 @@ try:
 except ImportError:
     raise Exception("[ergo: PackageError]: Please pip install `wget` to use package `package`.")
 
+# list flattening
+flatten = lambda l: [item for sublist in l for item in sublist]
+
+class RepositoryCollection(object):
+
+    # list of all repositories
+    repositories = []
+
+    def __init__(self):
+        pass
+
+    def add_repo(self, repository):
+        # check if two repositories have the same URL
+        # (if so raise an error)
+        for repo in self.repositories:
+            if repo.url == repository.url:
+                raise Exception("[ergo: epm]: [PackageError] New repository '%s' has existing source '%s'. Aborting." % (repository.url, repo.url)
+
+        self.repositories.append(repository)
+        
+    def remove_repo(self, repositories):
+        try:
+            self.repositories.remove(repository)
+        except ValueError:
+            print("[ergo: epm]: [Warning] Package to be removed ('%s'), but doesn't exist!")
+
+    def update_packages(self):
+        for repo in self.repositories:
+            repo.update_packages()
+
+    def list_packages():
+        return flatten([x.installedPackages for x in self.repositories])
+
+    def list_repositories():
+        return [x.name for x in repositories]
+
+                                
+class Repository:
+    name = ""
+    url = ""
+    installedPackages = []
+    
+    def __init__(self, name, url):
+        # initialize a new repository
+        self.name = name
+        self.url = url
+
+    def update_packages(self):
+        for package in installedPackage:
+            package.update_package()
+
+    def remove_packages(self):
+
+
+class Package:
+
 def epm(env, args, kwargs):
     if len(args) < 2:
         if args == ["list"]:
