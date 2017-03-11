@@ -39,7 +39,7 @@ class Package:
     version = ""
     description = ""
 
-    def __init__(self, name, description, url):
+    def __init__(self, name, version, description, url):
         self.name = name
         self.description = description
         self.url = url
@@ -51,6 +51,11 @@ class Package:
             download(os.path.join(PATH_TO_PACKAGES, self.name), self.url)
         except Exception as e:
             print("[ergo: epm]: [Error] Could not download package `%s`." % (self.name))
+
+    def uninstall(self):
+        """Uninstall self."""
+        os.remove(os.path.join(PATH_TO_PACKAGES, self.name))
+        print("[ergo: epm]: Removed package `%s`." % self.name)
         
     def doctor(self):
         if self.name == "":
@@ -67,8 +72,10 @@ class Package:
     
 def package_from_listing(string):
     """Generate a Package() object from a MANIFEST listing."""
-    split_listing = string.split("\\n")
-    return Package(split_listing[0], split_listing[1], split_listing[2])
+    [pacinfo, description, url] = string.strip().split("\n")
+    [name, version] = pacinfo.split("(")
+    version = version[:-1]
+    return Package(name, version, description, url)
 
                                
 class Repository:
@@ -92,13 +99,13 @@ class Repository:
         
     def update(self):
 
-        new_packages = str(urlopen(self.url).read().decode("utf-8")).split("\\n\\n")
+        new_packages = urlopen(self.url).read().decode("utf-8").split("\n\n")
         try:
             new_packages.remove("'")
         except ValueError:
             pass
 
-        self.remotePackages = list(map(package_from_listing, new_packages))
+        self.remotePackages = [package_from_listing(pkg) for pkg in new_packages]
         
     def update_packages(self):
         #self.remotePackages = map(package_from_
