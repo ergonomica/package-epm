@@ -28,10 +28,92 @@ PATH_TO_LOCALSTORE = os.path.join(os.path.expanduser("~"), ".ergo", ".epm")
 PATH_TO_PACKAGES = os.path.join(os.path.expanduser("~"), ".ergo", "packages")
 
 def download(path, url):
-    open(path, "wb").write(urlopen(url).read())
+    open(path, "wb").write(urlopen(url).read().decode("utf-8"))
 
 # list flattening (for package lists)
 flatten = lambda l: [item for sublist in l for item in sublist]
+
+class Package:
+    name = ""
+    url = ""
+    version = ""
+    description = ""
+
+    def __init__(self, name, description, url):
+        self.name = name
+        self.description = description
+        self.url = url
+
+    def install(self):
+        """Install the latest version of a package."""
+
+        try:
+            download(os.path.join(PATH_TO_PACKAGES, self.name), self.url)
+        except Exception as e:
+            print("[ergo: epm]: [Error] Could not download package `%s`." % (self.name))
+        
+    def doctor(self):
+        if self.name == "":
+            print("[ergo: epm]: [Warning] A package has an empty name!")
+
+
+    def equals(self, new_package):
+        #TODO
+        pass
+        
+    def is_later_version(self, new_package):
+        #TODO
+        pass
+    
+def package_from_listing(string):
+    """Generate a Package() object from a MANIFEST listing."""
+    split_listing = string.split("\\n")
+    return Package(split_listing[0], split_listing[1], split_listing[2])
+
+                               
+class Repository:
+    name = ""
+    url = ""
+    remotePackages = []
+    installedPackages = []
+    
+    def __init__(self, name, url):
+        # initialize a new repository
+        self.name = name
+        self.url = url
+
+    def install_package(self, packagename):
+        for remotePackage in self.remotePackages:
+            if remotePackage.name == packagename:
+                remotePackage.install()
+                self.installedPackages.append(remotePackage)
+                return True
+        return False
+        
+    def update(self):
+
+        new_packages = str(urlopen(self.url).read().decode("utf-8")).split("\\n\\n")
+        try:
+            new_packages.remove("'")
+        except ValueError:
+            pass
+
+        self.remotePackages = list(map(package_from_listing, new_packages))
+        
+    def update_packages(self):
+        #self.remotePackages = map(package_from_
+        
+        #for package in installedPackage:
+        #    package.update_package()
+        pass
+        
+            
+    def remove_packages(self, packagename):
+        for installedPackage in self.installedPackages:
+            installedPackages.remove(package)
+        pass
+ 
+
 
 class RepositoryCollection(object):
 
@@ -44,10 +126,16 @@ class RepositoryCollection(object):
 
     def update_store(self):
         if self.store: # if the package repository is stored in a file
-            pickle.dump(self, open(store, "wb"))
-            
+            pickle.dump(self, open(self.store, "wb"))
+
+    def update(self):
+        [repository.update() for repository in self.repositories]
+        self.update_store()
+        
     def add_repo(self, repository):
+        print("[ergo: epm]: Adding repository '%s' at '%s' to store..." % (repository.name, repository.url))
         # check if two repositories have the same URL
+        
         # (if so raise an error)
         for repo in self.repositories:
             if repo.url == repository.url:
@@ -71,102 +159,61 @@ class RepositoryCollection(object):
     def update(self):
         for repo in self.repositories:
             repo.update()
+        
     
     def update_packages(self):
         for repo in self.repositories:
             repo.update_packages()
 
-    def list_packages():
+    def list_packages(self):
         return flatten([x.installedPackages for x in self.repositories])
 
-    def list_repositories():
-        return [x.name for x in repositories]
+    def list_repositories(self):
+        return [x.name for x in self.repositories]
 
-    def install_package(packagename):
+    def install_package(self, packagename):
         for repository in self.repositories:
             if repository.install_package(packagename):
                 print("[ergo: epm]: Package `%s` successfully installed." % packagename)
                 return
                                 
         print("[ergo: epm]: [PackageError]: [Warning] No package `%s` found." % (packagename))
-                                
-class Repository:
-    name = ""
-    url = ""
-    remotePackages = []
-    installedPackages = []
-    
-    def __init__(self, name, url):
-        # initialize a new repository
-        self.name = name
-        self.url = url
-
-    def update(self):
-        new_packages = str(urlopen(self.url).read()).split("\\n\\n")
-        
-    def update_packages(self):
-        for package in installedPackage:
-            package.update_package()
-
-            
-    def remove_packages(self):
-        #
-        pass
-        
-class Package:
-    name = ""
-    url = ""
-    version = ""
-    description = ""
-
-    def __init__(self, name, description, url):
-        self.name = name
-        self.description = description
-        self.url = url
-
-    def install(self):
-        """Install the latest version of a package."""
-
-        try:
-            download(PATH_TO_PACKAGES, self.url)
-        except Exception, e:
-            print("[ergo: epm] [Error] Could not download package `%s`." % (self.name))
-        
-    def doctor(self):
-        if self.name == "":
-            print("[ergo: epm]: [Warning] A package has an empty name!")
-
-
-    def equals(self, new_package):
-
-    def is_later_version(self, new_package)
-
-def package_from_listing(string):
-    """Generate a Package() object from a MANIFEST listing."""
-    split_listing = string.split("\\n")
-    return Package()
+         
 
 # NOTE: this does not need to be continuously updated as the instantiated RepositoryStore object
 # automatically updates itself on any changes
 try:
     localStore = pickle.load(open(PATH_TO_LOCALSTORE, "rb"))
 except FileNotFoundError: # there is no package store
-    print("[ergo: epm] [Info] No epm store found!")
-    print("[ergo: epm] [Info] Initializing package store at %s.." % (PATH_TO_LOCALSTORE))
+    print("[ergo: epm]: [Info] No epm store found!")
+    print("[ergo: epm]: [Info] Initializing package store at %s.." % (PATH_TO_LOCALSTORE))
 
     # initialize the localstore as a RepositoryCollection
     localStore = RepositoryCollection(PATH_TO_LOCALSTORE)
 
+    # add main Ergonomica repository
+    localStore.add_repo(Repository("Ergonomica Main", "https://raw.githubusercontent.com/ergonomica/packages/master/MANIFEST"))
+    
+    # dump this localstore
+    pickle.dump(localStore, open(PATH_TO_LOCALSTORE, "wb"))
+    
 def epm(env, args, kwargs):
 
+    if args == []:
+        print("[ergo: epm] [Warning] Nothing to do!")
+        return
+        
     # info commands (list packages, list repos)
     if len(args) < 2:
-        if args == ["packages"]:
+        if args == ["list-packages"]:
             return localStore.list_packages()
 
-        elif args == ["repos"]:
+        elif args == ["list-repos"]:
             return localStore.list_repositories()
 
+        elif args == ["update"]:
+            localStore.update()
+        
         else:
             raise Exception("[ergo: ArgumentError]: Not enough arguments passed to `package` command.")
 
@@ -174,7 +221,7 @@ def epm(env, args, kwargs):
         map(localStore.add_repository, map(Repository, args[1:]))
 
     elif args[0] == "install-pkg":
-        map(localStore.install_package, args[1:])
+        [localStore.install_package(pkg) for pkg in args[1:]]
 
     elif args[0] == "uninstall-pkg":
         map(localStore.uninstall_package, args[1:])
