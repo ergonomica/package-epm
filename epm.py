@@ -124,16 +124,19 @@ class Repository:
 
 class RepositoryCollection(object):
 
-    # list of all repositories
-    repositories = []
-
     def __init__(self, store=None):
         self.store = store
-        pass
-
+        self.repositories = []
+        
+    def load_from_store(self):
+        if self.store:
+            self.__dict__.update(pickle.load(open(self.store, 'rb')))
+        else:
+            raise Exception("Can't load from store if not set!")
+        
     def update_store(self):
         if self.store: # if the package repository is stored in a file
-            pickle.dump(self, open(self.store, "wb"))
+            pickle.dump(self.__dict__, open(self.store, "wb"))
 
     def update(self):
         [repository.update() for repository in self.repositories]
@@ -181,58 +184,58 @@ class RepositoryCollection(object):
     def install_package(self, packagename):
         for repository in self.repositories:
             if repository.install_package(packagename):
-                print("[ergo: epm]: Package `%s` successfully installed." % packagename)
-                return
+                return ["[ergo: epm]: Package `%s` successfully installed." % packagename]
                                 
         print("[ergo: epm]: [PackageError]: [Warning] No package `%s` found." % (packagename))
          
 
-# NOTE: this does not need to be continuously updated as the instantiated RepositoryStore object
-# automatically updates itself on any changes
+localStore = RepositoryCollection(PATH_TO_LOCALSTORE)
+
 try:
-    localStore = pickle.load(open(PATH_TO_LOCALSTORE, "rb"))
-except FileNotFoundError: # there is no package store
+    localStore.load_from_store()
+
+except IOError:
+    
+    # NOTE: this does not need to be continuously updated as the instantiated RepositoryStore object
+    # automatically updates itself on any changes
+	 
     print("[ergo: epm]: [Info] No epm store found!")
     print("[ergo: epm]: [Info] Initializing package store at %s.." % (PATH_TO_LOCALSTORE))
 
-    # initialize the localstore as a RepositoryCollection
-    localStore = RepositoryCollection(PATH_TO_LOCALSTORE)
-
+    
     # add main Ergonomica repository
     localStore.add_repo(Repository("Ergonomica Main", "https://raw.githubusercontent.com/ergonomica/packages/master/MANIFEST"))
-    
-    # dump this localstore
-    pickle.dump(localStore, open(PATH_TO_LOCALSTORE, "wb"))
-    
-def epm(env, args, kwargs):
 
-    if args == []:
-        print("[ergo: epm] [Warning] Nothing to do!")
-        return
-        
-    # info commands (list packages, list repos)
-    if len(args) < 2:
-        if args == ["list-packages"]:
+
+def main(argc):
+    """epm: Ergonomica's package manager.
+
+    Usage:
+        epm install PACKAGES...
+        epm uninstall PACKAGES...
+        epm list (packages|repos)
+        epm update
+        epm add-source NAME URL
+    """
+    
+    if argc.args['list']:
+        if argc.args['packages']:
             return localStore.list_packages()
-
-        elif args == ["list-repos"]:
+        else:
             return localStore.list_repositories()
 
-        elif args == ["update"]:
-            localStore.update()
-        
-        else:
-            raise Exception("[ergo: ArgumentError]: Not enough arguments passed to `package` command.")
+    elif argc.args['update']:
+        localStore.update()
+        return
 
-    if args[0] == "add-source":
-        map(localStore.add_repository, map(Repository, args[1:]))
+    elif argc.args['add-source']:
+        localStore.add_repository(Repository(argc.args['NAME'],
+                                             argc.args['URL']))
 
-    elif args[0] == "install-pkg":
-        [localStore.install_package(pkg) for pkg in args[1:]]
+    elif argc.args['install']:
+        map(localStore.install_package, argc.args['PACKAGES'])
 
-    elif args[0] == "uninstall-pkg":
-        map(localStore.uninstall_package, args[1:])
+    elif argc.args['uninstall']:
+        map(localStore.uninstall_package, argc.args['PACKAGES'])
 
-verbs = {"epm":epm,
-        }
  
