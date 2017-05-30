@@ -69,7 +69,8 @@ class Package:
     def is_later_version(self, new_package):
         #TODO
         pass
-    
+
+
 def package_from_listing(string):
     """Generate a Package() object from a MANIFEST listing."""
     [pacinfo, description, url] = string.strip().split("\n")
@@ -181,6 +182,9 @@ class RepositoryCollection(object):
     def list_repositories(self):
         return [x.name for x in self.repositories]
 
+    def list_remotes(self):
+        return ["%s: %s" % (y.name, y.description) for y in flatten([x.remotePackages for x in self.repositories])]
+    
     def install_package(self, packagename):
         for repository in self.repositories:
             if repository.install_package(packagename):
@@ -213,17 +217,22 @@ def main(argc):
     Usage:
         epm install PACKAGES...
         epm uninstall PACKAGES...
-        epm list (packages|repos)
+        epm packages (local|remote)
+        epm repos
         epm update
         epm add-source NAME URL
     """
-    
-    if argc.args['list']:
-        if argc.args['packages']:
-            return localStore.list_packages()
-        else:
-            return localStore.list_repositories()
 
+    if argc.args['repos']:
+        return localStore.list_repositories()
+
+    elif argc.args['packages']:
+        if argc.args['local']:
+            return localStore.list_packages()
+        
+        elif argc.args['remote']:
+            return localStore.list_remotes()
+        
     elif argc.args['update']:
         localStore.update()
         return
