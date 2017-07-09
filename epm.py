@@ -48,7 +48,7 @@ class Package:
         """Install the latest version of a package."""
 
         try:
-            download(os.path.join(PATH_TO_PACKAGES, self.name), self.url)
+            download(os.path.join(PATH_TO_PACKAGES, "ergo_" + self.name + ".py"), self.url)
         except Exception as e:
             print("[ergo: epm]: [Error] Could not download package `%s`." % (self.name))
 
