@@ -211,7 +211,7 @@ except IOError:
     localStore.add_repo(Repository("Ergonomica Main", "https://raw.githubusercontent.com/ergonomica/packages/master/MANIFEST"))
 
 
-def main(argc):
+def epm(argc):
     """epm: Ergonomica's package manager.
 
     Usage:
@@ -247,4 +247,4 @@ def main(argc):
     elif argc.args['uninstall']:
         map(localStore.uninstall_package, argc.args['PACKAGES'])
 
- 
+exports  = {"epm": epm}
