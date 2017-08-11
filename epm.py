@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 [epm.py]
 
@@ -28,7 +31,7 @@ PATH_TO_LOCALSTORE = os.path.join(os.path.expanduser("~"), ".ergo", ".epm")
 PATH_TO_PACKAGES = os.path.join(os.path.expanduser("~"), ".ergo", "packages")
 
 def download(path, url):
-    open(path, "wb").write(urlopen(url).read().decode("utf-8"))
+    open(path, "wb").write(urlopen(url).read())
 
 # list flattening (for package lists)
 flatten = lambda l: [item for sublist in l for item in sublist]
@@ -54,7 +57,7 @@ class Package:
 
     def uninstall(self):
         """Uninstall self."""
-        os.remove(os.path.join(PATH_TO_PACKAGES, self.name))
+        os.remove(os.path.join(PATH_TO_PACKAGES, "ergo_" + self.name + ".py"))
         print("[ergo: epm]: Removed package `%s`." % self.name)
         
     def doctor(self):
@@ -65,7 +68,7 @@ class Package:
     def equals(self, new_package):
         #TODO
         pass
-        
+    
     def is_later_version(self, new_package):
         #TODO
         pass
@@ -97,7 +100,11 @@ class Repository:
                 self.installedPackages.append(remotePackage)
                 return True
         return False
-        
+
+    def uninstall_package(self, packagename):
+        for package in self.installedPackages:
+            package.uninstall()
+            
     def update(self):
 
         new_packages = urlopen(self.url).read().decode("utf-8").split("\n\n")
@@ -114,13 +121,13 @@ class Repository:
         #for package in installedPackage:
         #    package.update_package()
         pass
-        
+    
             
     def remove_packages(self, packagename):
         for installedPackage in self.installedPackages:
             installedPackages.remove(package)
         pass
- 
+    
 
 
 class RepositoryCollection(object):
@@ -170,7 +177,7 @@ class RepositoryCollection(object):
     def update(self):
         for repo in self.repositories:
             repo.update()
-        
+            
     
     def update_packages(self):
         for repo in self.repositories:
@@ -189,9 +196,13 @@ class RepositoryCollection(object):
         for repository in self.repositories:
             if repository.install_package(packagename):
                 return ["[ergo: epm]: Package `%s` successfully installed." % packagename]
-                                
+            
         print("[ergo: epm]: [PackageError]: [Warning] No package `%s` found." % (packagename))
-         
+
+    def uninstall_package(self, packagename):
+        for repository in self.repositories:
+            repository.uninstall_package(packagename)
+            
 
 localStore = RepositoryCollection(PATH_TO_LOCALSTORE)
 
@@ -241,10 +252,12 @@ def epm(argc):
         localStore.add_repository(Repository(argc.args['NAME'],
                                              argc.args['URL']))
 
+        
     elif argc.args['install']:
-        map(localStore.install_package, argc.args['PACKAGES'])
+        [localStore.install_package(x) for x in argc.args['PACKAGES']]
 
     elif argc.args['uninstall']:
         map(localStore.uninstall_package, argc.args['PACKAGES'])
 
 exports  = {"epm": epm}
+
